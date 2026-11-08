@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1120">
+    <title>PI ADMIN DASHBOARD</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand-icon">π</span>
+            <div>
+                <h1>PI ADMIN</h1>
+                <p>RASPBERRY PI MANAGEMENT</p>
+            </div>
+        </div>
+        <div class="server-status">
+            <span class="status-dot"></span>
+            <span id="connectionStatus">Checking server...</span>
+        </div>
+    </header>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <p class="nav-heading">MAIN MENU</p>
+            <nav>
+                <a href="/" class="nav-link active">▦ &nbsp; Overview</a>
+                <a href="#system" class="nav-link">◫ &nbsp; System Monitor</a>
+                <a href="#network" class="nav-link">⌁ &nbsp; Network</a>
+                <a href="#services" class="nav-link">⚙ &nbsp; Services</a>
+                <a href="#logs" class="nav-link">▤ &nbsp; System Logs</a>
+                <a href="#security" class="nav-link">⬡ &nbsp; Security</a>
+            </nav>
+
+            <p class="nav-heading settings-heading">CONFIGURATION</p>
+            <nav>
+                <a href="#settings" class="nav-link">⚙ &nbsp; Settings</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span class="status-dot"></span>
+                <span>Dashboard API Online</span>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section class="welcome">
+                <p class="eyebrow">SYSTEM CONTROL CENTER</p>
+                <h2>Welcome to <span>PI ADMIN DASHBOARD</span></h2>
+                <p>Monitor and manage your Raspberry Pi from one place.</p>
+            </section>
+
+            <section class="overview">
+                <div class="section-heading">
+                    <h3>System Overview</h3>
+                    <span>LIVE STATUS</span>
+                </div>
+
+                <div class="card-grid">
+                    <article class="info-card">
+                        <p>SERVER STATUS</p>
+                        <h3 id="serverStatus">Checking...</h3>
+                        <span>Express API</span>
+                    </article>
+
+                    <article class="info-card">
+                        <p>APPLICATION</p>
+                        <h3>PI ADMIN</h3>
+                        <span>Dashboard service</span>
+                    </article>
+
+                    <article class="info-card">
+                        <p>API ENDPOINT</p>
+                        <h3>/api/health</h3>
+                        <span>Health monitoring</span>
+                    </article>
+                </div>
+            </section>
+
+            <section class="activity">
+                <h3>System Information</h3>
+                <p id="lastChecked">Waiting for server response...</p>
+            </section>
+
+            <section class="system-monitor" id="system-monitor">
+                <div class="section-heading">
+                    <h3>Live System Monitor</h3>
+                    <span>LIVE METRICS · 5 SEC</span>
+                </div>
+
+                <div class="card-grid">
+                    <article class="info-card">
+                        <p>CPU USAGE</p>
+                        <h3 id="cpuUsage">--%</h3>
+                        <span id="cpuModel">Loading processor...</span>
+                    </article>
+
+                    <article class="info-card">
+                        <p>RAM USAGE</p>
+                        <h3 id="ramUsage">--%</h3>
+                        <span id="ramDetails">Loading memory...</span>
+                    </article>
+
+                    <article class="info-card">
+                        <p>CPU TEMPERATURE</p>
+                        <h3 id="cpuTemperature">--°C</h3>
+                        <span>Processor temperature</span>
+                    </article>
+
+                    <article class="info-card">
+                        <p>DISK USAGE</p>
+                        <h3 id="diskUsage">--%</h3>
+                        <span id="diskDetails">Loading storage...</span>
+                    </article>
+
+                    <article class="info-card">
+                        <p>SYSTEM UPTIME</p>
+                        <h3 id="systemUptime">--</h3>
+                        <span>Time since last boot</span>
+                    </article>
+                </div>
+            </section>
+            <section class="system-monitor" id="network-monitor">
+                <div class="section-heading">
+                    <h3>Network Monitoring</h3>
+                    <span>LIVE NETWORK STATUS · 5 SEC</span>
+                </div>
+                <div class="card-grid">
+                    <article class="info-card"><p>INTERNET STATUS</p><h3 id="internetStatus">--</h3><span>Internet connectivity</span></article>
+                    <article class="info-card"><p>ACTIVE INTERFACES</p><h3 id="interfaceCount">--</h3><span>Connected interfaces</span></article>
+                    <article class="info-card"><p>WI-FI STATUS</p><h3 id="wifiStatus">--</h3><span id="wifiAddress">Waiting...</span></article>
+                    <article class="info-card"><p>TAILSCALE</p><h3 id="tailscaleStatus">--</h3><span id="tailscaleDetails">Interface detection</span></article>
+                    <article class="info-card"><p>DOWNLOAD SPEED</p><h3 id="downloadSpeed">--</h3><span>Current network traffic</span></article>
+                    <article class="info-card"><p>UPLOAD SPEED</p><h3 id="uploadSpeed">--</h3><span>Current network traffic</span></article>
+                </div>
+                <div class="section-heading">
+                    <h3>Network Interfaces</h3>
+                    <span>DETECTED DEVICES</span>
+                </div>
+                <div id="networkInterfaces" class="card-grid">
+                    <article class="info-card"><p>NETWORK</p><h3>Loading...</h3></article>
+                </div>
+            </section>
+            <section class="coming-soon">
+                <h3>More Management Tools</h3>
+                <p>System monitoring, network management, service controls and logs will be added in upcoming steps.</p>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        PI ADMIN DASHBOARD <span>·</span> Built for Raspberry Pi
+    </footer>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
