@@ -26,7 +26,7 @@ app.use(express.json({ limit: "10kb" }));
 
 app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 100,
+    limit: 1000,
     standardHeaders: "draft-8",
     legacyHeaders: false
 }));
@@ -67,4 +67,6 @@ app.use(express.static(PUBLIC_DIR));
 app.listen(PORT, HOST, () => {
     console.log(`PI ADMIN DASHBOARD running at http://${HOST}:${PORT}`);
 });
+
+
 
