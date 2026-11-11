@@ -15,6 +15,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+app.set('trust proxy', 'loopback');
+
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "127.0.0.1";
 const PUBLIC_DIR = path.join(__dirname, "../public");
@@ -65,3 +67,4 @@ app.use(express.static(PUBLIC_DIR));
 app.listen(PORT, HOST, () => {
     console.log(`PI ADMIN DASHBOARD running at http://${HOST}:${PORT}`);
 });
+
