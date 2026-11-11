@@ -1,4 +1,4 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import systemRoutes from "./routes/system.routes.js";
 import networkRoutes from "./routes/network.routes.js";
+import logsRoutes from "./routes/logs.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
 
@@ -62,6 +63,7 @@ app.use(requireAuth);
 // Existing protected APIs
 app.use("/api/system", systemRoutes);
 app.use("/api/network", networkRoutes);
+app.use("/api/logs", logsRoutes);
 
 // Vite production frontend
 app.get("/", (req, res) => {
