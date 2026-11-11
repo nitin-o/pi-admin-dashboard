@@ -15,11 +15,13 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.set('trust proxy', 'loopback');
+app.set("trust proxy", "loopback");
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "127.0.0.1";
+
 const PUBLIC_DIR = path.join(__dirname, "../public");
+const DIST_DIR = path.join(__dirname, "../dist");
 
 app.use(helmet());
 app.use(express.json({ limit: "10kb" }));
@@ -40,7 +42,7 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-// Public login page and its required assets
+// Public login page and assets
 app.get("/login", (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, "login.html"));
 });
@@ -54,19 +56,20 @@ app.get("/js/login.js", (req, res) => {
 // Authentication API
 app.use("/api/auth", authRoutes);
 
-// Protect all remaining routes and dashboard files
+// Protect remaining routes and frontend
 app.use(requireAuth);
 
-// Protected APIs
+// Existing protected APIs
 app.use("/api/system", systemRoutes);
 app.use("/api/network", networkRoutes);
 
-// Protected dashboard files
-app.use(express.static(PUBLIC_DIR));
+// Vite production frontend
+app.get("/", (req, res) => {
+    res.sendFile(path.join(DIST_DIR, "index.html"));
+});
+
+app.use(express.static(DIST_DIR));
 
 app.listen(PORT, HOST, () => {
     console.log(`PI ADMIN DASHBOARD running at http://${HOST}:${PORT}`);
 });
-
-
-

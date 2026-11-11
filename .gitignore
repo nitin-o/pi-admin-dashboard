@@ -10,3 +10,5 @@ logs/
 *.backup
 *.nav-backup
 *.network-backup
+
+dist/
