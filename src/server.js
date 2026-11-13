@@ -4,6 +4,8 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { createServer } from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import authRoutes from "./routes/auth.routes.js";
 import logRoutes from "./routes/log.routes.js";
@@ -19,6 +21,10 @@ import {
 } from "./middleware/error-handler.js";
 
 import { attachWebSocket } from "./services/websocket.service.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DIST_DIR = path.resolve(__dirname, "../dist");
 
 const app = express();
 const server = createServer(app);
@@ -69,6 +75,19 @@ app.use("/api/system", systemRoutes);
 app.use("/api/network", networkRoutes);
 app.use("/api/statistics", statisticsRoutes);
 
+// Serve the production frontend.
+app.use(express.static(DIST_DIR));
+
+app.get("/{*splat}", (req, res, next) => {
+    if (req.path.startsWith("/api/") || req.path === "/ws") {
+        return next();
+    }
+
+    res.sendFile(path.join(DIST_DIR, "index.html"), error => {
+        if (error) next(error);
+    });
+});
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 
@@ -84,6 +103,7 @@ if (!process.env.JWT_SECRET || !process.env.ADMIN_USERNAME ||
 
 server.listen(PORT, HOST, () => {
     console.log(`Log Viewer API running at http://${HOST}:${PORT}`);
+    console.log(`Production frontend directory: ${DIST_DIR}`);
     console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 });
 
