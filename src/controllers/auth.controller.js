@@ -1,81 +1,114 @@
-﻿import { verifyPassword, createSessionToken } from "../utils/auth.utils.js";
+﻿import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { writeLog } from "../services/log.service.js";
 
-export async function login(req, res) {
+export async function login(req, res, next) {
     try {
         const { username, password } = req.body || {};
 
-        const adminUsername = process.env.ADMIN_USERNAME;
-        const passwordHash = process.env.ADMIN_PASSWORD_HASH;
-        const sessionSecret = process.env.SESSION_SECRET;
-
-        if (!adminUsername || !passwordHash || !sessionSecret ||
-            sessionSecret.length < 32) {
-            return res.status(500).json({
-                status: "error",
-                message: "Authentication configuration is incomplete."
-            });
-        }
-
-        if (typeof username !== "string" ||
+        if (
+            typeof username !== "string" ||
             typeof password !== "string" ||
-            username.length > 100 ||
-            password.length > 1024) {
+            !username.trim() ||
+            !password ||
+            password.length > 256
+        ) {
             return res.status(400).json({
-                status: "error",
-                message: "Invalid login request."
+                success: false,
+                message: "Valid username and password are required"
             });
         }
 
-        const passwordOK = await verifyPassword(password, passwordHash);
+        const validUsername =
+            username === process.env.ADMIN_USERNAME;
 
-        if (username !== adminUsername || !passwordOK) {
+        const validPassword = process.env.ADMIN_PASSWORD_HASH
+            ? await bcrypt.compare(
+                password,
+                process.env.ADMIN_PASSWORD_HASH
+            )
+            : false;
+
+        if (!validUsername || !validPassword) {
+            await writeLog({
+                type: "authentication",
+                level: "warning",
+                source: "auth-controller",
+                message: "Admin login failed",
+                metadata: {
+                    username: username.slice(0, 100),
+                    ip: req.ip
+                }
+            });
+
             return res.status(401).json({
-                status: "error",
-                message: "Invalid username or password."
+                success: false,
+                message: "Invalid username or password"
             });
         }
 
-        const token = createSessionToken(username, sessionSecret);
+        const token = jwt.sign(
+            {
+                username,
+                role: "admin"
+            },
+            process.env.JWT_SECRET,
+            {
+                subject: "admin",
+                algorithm: "HS256",
+                expiresIn: process.env.JWT_EXPIRES_IN || "1h"
+            }
+        );
 
-        res.cookie("pi_admin_session", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            path: "/",
-            maxAge: 8 * 60 * 60 * 1000
+        await writeLog({
+            type: "authentication",
+            level: "info",
+            source: "auth-controller",
+            message: "Admin login successful",
+            metadata: {
+                username,
+                ip: req.ip
+            }
         });
 
-        return res.json({
-            status: "success",
-            message: "Login successful."
+        res.json({
+            success: true,
+            message: "Login successful",
+            token,
+            user: {
+                username,
+                role: "admin"
+            }
         });
     } catch (error) {
-        console.error("Login error:", error.message);
-
-        return res.status(500).json({
-            status: "error",
-            message: "Unable to process login."
-        });
+        next(error);
     }
 }
 
-export function logout(req, res) {
-    res.clearCookie("pi_admin_session", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/"
-    });
+export async function logout(req, res, next) {
+    try {
+        await writeLog({
+            type: "authentication",
+            level: "info",
+            source: "auth-controller",
+            message: "Admin logout requested",
+            metadata: {
+                username: req.user?.username || "unknown"
+            }
+        });
 
-    return res.json({
-        status: "success",
-        message: "Logged out successfully."
-    });
+        res.json({
+            success: true,
+            message: "Logout successful. Discard the access token."
+        });
+    } catch (error) {
+        next(error);
+    }
 }
 
 export function currentUser(req, res) {
-    return res.json({
-        status: "success",
-        username: req.auth.username
+    res.json({
+        success: true,
+        user: req.user
     });
 }

@@ -2,13 +2,19 @@
 .env
 .env.*
 !.env.example
-logs/
-*.log
-.DS_Store
 
-# Local backup files
+# Generated logs and runtime data
+logs/
+storage/
+*.log
+
+# Build output
+dist/
+
+# Local files
+.DS_Store
+Thumbs.db
 *.backup
 *.nav-backup
 *.network-backup
-
-dist/
+*.tmp

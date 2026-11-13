@@ -1,20 +1,14 @@
-﻿import { getNetworkStats } from "../services/network.service.js";
+﻿import { getNetworkOverview } from "../services/network.service.js";
 
-export async function getNetworkStatsController(req, res) {
+export async function getNetworkStatus(req, res, next) {
     try {
-        const stats = await getNetworkStats();
+        const network = await getNetworkOverview();
 
-        res.json({
+        res.status(200).json({
             success: true,
-            device: "PI ADMIN",
-            data: stats
+            network
         });
     } catch (error) {
-        console.error("Network monitor error:", error.message);
-
-        res.status(500).json({
-            success: false,
-            message: "Unable to retrieve network information."
-        });
+        next(error);
     }
 }

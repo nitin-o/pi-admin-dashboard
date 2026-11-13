@@ -1,8 +1,9 @@
-﻿import express from "express";
-import { getNetworkStatsController } from "../controllers/network.controller.js";
+﻿import { Router } from "express";
+import { getNetworkStatus } from "../controllers/network.controller.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
-const router = express.Router();
+const router = Router();
 
-router.get("/", getNetworkStatsController);
+router.get("/", requireAuth, getNetworkStatus);
 
 export default router;

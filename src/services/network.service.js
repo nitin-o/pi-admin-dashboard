@@ -1,60 +1,51 @@
-﻿import si from "systeminformation";
+﻿
+import si from "systeminformation";
 
-export async function getNetworkStats() {
-    const interfaces = await si.networkInterfaces();
+export async function getNetworkOverview() {
+    const [interfaces, stats] = await Promise.all([
+        si.networkInterfaces(),
+        si.networkStats()
+    ]);
 
-    const activeInterfaces = interfaces
-        .filter(item => !item.internal && item.operstate === "up")
-        .map(item => ({
-            name: item.iface,
-            type: item.type,
-            ip4: item.ip4,
-            ip6: item.ip6,
-            status: item.operstate,
-            speed: item.speed
-        }));
-
-    const networkTraffic = await Promise.all(
-        activeInterfaces.map(async item => {
-            try {
-                const stats = await si.networkStats(item.name);
-                const current = Array.isArray(stats) ? stats[0] : stats;
-
-                return {
-                    name: item.name,
-                    download: current?.rx_sec ?? 0,
-                    upload: current?.tx_sec ?? 0
-                };
-            } catch {
-                return {
-                    name: item.name,
-                    download: 0,
-                    upload: 0
-                };
-            }
-        })
+    const statsByInterface = new Map(
+        stats.map(item => [item.iface, item])
     );
 
-    const tailscaleInterfaces = activeInterfaces.filter(item =>
-        item.name.toLowerCase().includes("tailscale")
-    );
+    const groupedInterfaces = new Map();
 
-    let internet = false;
+    for (const item of interfaces) {
+        // Hide loopback interfaces.
+        if (item.internal) continue;
 
-    try {
-        const result = await si.inetChecksite("https://www.google.com");
-        internet = result.ok === true;
-    } catch {
-        internet = false;
+        const name = item.iface;
+        const existing = groupedInterfaces.get(name);
+
+        const networkStats = statsByInterface.get(name) || {};
+
+        const current = {
+            name,
+            type: item.type || existing?.type || "virtual",
+            ip4: item.ip4 || existing?.ip4 || "",
+            ip6: item.ip6 || existing?.ip6 || "",
+            mac: item.mac || existing?.mac || "",
+            internal: false,
+            virtual: item.virtual ?? existing?.virtual ?? false,
+            operationalStatus:
+                item.operstate === "up" || existing?.operationalStatus === "up"
+                    ? "up"
+                    : item.operstate || existing?.operationalStatus || "unknown",
+            speedMbps: item.speed || existing?.speedMbps || null,
+            rxBytes: networkStats.rx_bytes ?? existing?.rxBytes ?? null,
+            txBytes: networkStats.tx_bytes ?? existing?.txBytes ?? null,
+            rxErrors: networkStats.rx_errors ?? existing?.rxErrors ?? null,
+            txErrors: networkStats.tx_errors ?? existing?.txErrors ?? null
+        };
+
+        groupedInterfaces.set(name, current);
     }
 
     return {
-        internet,
-        interfaces: activeInterfaces,
-        traffic: networkTraffic,
-        tailscale: {
-            detected: tailscaleInterfaces.length > 0,
-            interfaces: tailscaleInterfaces.map(item => item.name)
-        }
+        interfaces: [...groupedInterfaces.values()],
+        collectedAt: new Date().toISOString()
     };
 }

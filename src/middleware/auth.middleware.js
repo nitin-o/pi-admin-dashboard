@@ -1,43 +1,55 @@
-﻿import { verifySessionToken } from "../utils/auth.utils.js";
+﻿import jwt from "jsonwebtoken";
+import { writeLog } from "../services/log.service.js";
 
-export function requireAuth(req, res, next) {
-    const secret = process.env.SESSION_SECRET;
+export async function requireAuth(req, res, next) {
+    const authorization = req.headers.authorization || "";
+    const token = authorization.startsWith("Bearer ")
+        ? authorization.slice(7)
+        : null;
 
-    if (!secret || secret.length < 32) {
-        return res.status(500).json({
-            status: "error",
-            message: "Authentication is not configured."
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: "Authentication required",
+            requestId: req.requestId || null
         });
     }
 
-    const cookies = req.headers.cookie || "";
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET, {
+            algorithms: ["HS256"]
+        });
 
-    const sessionCookie = cookies
-        .split(";")
-        .map(cookie => cookie.trim())
-        .find(cookie => cookie.startsWith("pi_admin_session="));
+        req.user = {
+            id: payload.sub,
+            username: payload.username,
+            role: payload.role
+        };
 
-    const token = sessionCookie
-        ? sessionCookie.substring("pi_admin_session=".length)
-        : null;
-
-    const session = token
-        ? verifySessionToken(token, secret)
-        : null;
-
-    if (!session) {
-        if (req.originalUrl.startsWith("/api/")) {
-            return res.status(401).json({
-                status: "error",
-                message: "Authentication required."
+        next();
+    } catch (error) {
+        try {
+            await writeLog({
+                type: "authentication",
+                level: "warning",
+                source: "auth-middleware",
+                message: "Authentication token rejected",
+                requestId: req.requestId || null,
+                metadata: {
+                    reason: error.name === "TokenExpiredError"
+                        ? "expired_token"
+                        : "invalid_token",
+                    path: req.path
+                }
             });
+        } catch (loggingError) {
+            console.error("Authentication logging failed:", loggingError.message);
         }
 
-        return res.redirect("/login");
+        return res.status(401).json({
+            success: false,
+            message: "Invalid or expired authentication token",
+            requestId: req.requestId || null
+        });
     }
-
-    req.auth = session;
-
-    next();
 }
-

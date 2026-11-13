@@ -1,33 +1,54 @@
 ﻿import si from "systeminformation";
 
-export async function getSystemStats() {
-    const [cpu, memory, temperature, disk, time] = await Promise.all([
+export async function getSystemOverview() {
+    const [
+        cpu,
+        load,
+        memory,
+        disks,
+        os,
+        time,
+        temperature
+    ] = await Promise.all([
+        si.cpu(),
         si.currentLoad(),
         si.mem(),
-        si.cpuTemperature(),
         si.fsSize(),
-        si.time()
+        si.osInfo(),
+        si.time(),
+        si.cpuTemperature()
     ]);
 
     return {
+        hostname: os.hostname,
+        platform: os.platform,
+        distro: os.distro,
+        architecture: os.arch,
+        kernel: os.kernel,
+        uptimeSeconds: time.uptime,
         cpu: {
-            usage: Number(cpu.currentLoad.toFixed(1)),
-            model: (await si.cpu()).brand
+            manufacturer: cpu.manufacturer,
+            brand: cpu.brand,
+            cores: cpu.cores,
+            physicalCores: cpu.physicalCores,
+            usagePercent: Number(load.currentLoad.toFixed(2)),
+            temperatureCelsius: temperature.main || null
         },
         memory: {
-            total: memory.total,
-            used: memory.used,
-            free: memory.available,
-            usage: Number(((memory.used / memory.total) * 100).toFixed(1))
+            totalBytes: memory.total,
+            usedBytes: memory.used,
+            freeBytes: memory.free,
+            usagePercent: Number(
+                ((memory.used / memory.total) * 100).toFixed(2)
+            )
         },
-        temperature: temperature.main,
-        disk: disk.map(item => ({
-            filesystem: item.fs,
-            mount: item.mount,
-            total: item.size,
-            used: item.used,
-            usage: item.use
+        disks: disks.map(disk => ({
+            filesystem: disk.fs,
+            mount: disk.mount,
+            totalBytes: disk.size,
+            usedBytes: disk.used,
+            usagePercent: disk.use
         })),
-        uptime: time.uptime
+        collectedAt: new Date().toISOString()
     };
 }

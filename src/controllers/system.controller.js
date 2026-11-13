@@ -1,20 +1,14 @@
-﻿import { getSystemStats } from "../services/system.service.js";
+﻿import { getSystemOverview } from "../services/system.service.js";
 
-export async function getSystemStatsController(req, res) {
+export async function getSystemStatus(req, res, next) {
     try {
-        const stats = await getSystemStats();
+        const system = await getSystemOverview();
 
-        res.json({
+        res.status(200).json({
             success: true,
-            device: "PI ADMIN",
-            data: stats
+            system
         });
     } catch (error) {
-        console.error("System monitor error:", error.message);
-
-        res.status(500).json({
-            success: false,
-            message: "Unable to retrieve system information."
-        });
+        next(error);
     }
 }
