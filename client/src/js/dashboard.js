@@ -189,7 +189,15 @@ function renderOverview() {
                     <select id="log-level">
                         <option value="">All Levels</option>
                     </select>
-                    <button class="secondary-button" id="filter-button">Filter</button>
+                    <input id="filter-ip" type="search" placeholder="IP address">
+<input id="filter-username" type="search" placeholder="Username">
+<input id="filter-userid" type="search" placeholder="User ID">
+<input id="filter-device" type="search" placeholder="Device">
+<input id="filter-platform" type="search" placeholder="Platform">
+<select id="filter-method"><option value="">All Methods</option><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select>
+<input id="filter-endpoint" type="search" placeholder="API endpoint">
+<input id="filter-status" type="search" placeholder="Status code">
+<button class="secondary-button" id="filter-button">Filter</button>
                 </div>
 
                 <div id="logs-table"></div>
@@ -223,7 +231,15 @@ function renderLogsPage() {
                 <select id="log-level">
                     <option value="">All Levels</option>
                 </select>
-                <button class="secondary-button" id="filter-button">Apply Filters</button>
+                <input id="filter-ip" type="search" placeholder="IP address">
+<input id="filter-username" type="search" placeholder="Username">
+<input id="filter-userid" type="search" placeholder="User ID">
+<input id="filter-device" type="search" placeholder="Device">
+<input id="filter-platform" type="search" placeholder="Platform">
+<select id="filter-method"><option value="">All Methods</option><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select>
+<input id="filter-endpoint" type="search" placeholder="API endpoint">
+<input id="filter-status" type="search" placeholder="Status code">
+<button class="secondary-button" id="filter-button">Apply Filters</button>
             </div>
             <div id="logs-table"></div>
             <div class="pagination" id="pagination"></div>
@@ -320,8 +336,9 @@ async function loadStatistics() {
 function bindFilters() {
     const typeSelect = document.getElementById("log-type");
     const levelSelect = document.getElementById("log-level");
+    const filterButton = document.getElementById("filter-button");
 
-    if (!typeSelect || !levelSelect) return;
+    if (!typeSelect || !levelSelect || !filterButton) return;
 
     typeSelect.innerHTML = `
         <option value="">All Categories</option>
@@ -337,19 +354,29 @@ function bindFilters() {
         `).join("")}
     `;
 
-    document.getElementById("filter-button").addEventListener("click", () => {
+    filterButton.addEventListener("click", () => {
+        const valueOf = id =>
+            document.getElementById(id)?.value.trim() || "";
+
         currentPage = 1;
 
         currentFilters = {
             type: typeSelect.value,
             level: levelSelect.value,
-            search: document.getElementById("log-search").value.trim()
+            search: valueOf("log-search"),
+            ip: valueOf("filter-ip"),
+            username: valueOf("filter-username"),
+            userId: valueOf("filter-userid"),
+            device: valueOf("filter-device"),
+            platform: valueOf("filter-platform"),
+            method: valueOf("filter-method"),
+            endpoint: valueOf("filter-endpoint"),
+            statusCode: valueOf("filter-status")
         };
 
         loadLogs();
     });
 }
-
 async function loadLogs() {
     try {
         const response = await getLogs({
@@ -376,6 +403,12 @@ async function loadLogs() {
                                 <th>Category</th>
                                 <th>Level</th>
                                 <th>Source</th>
+                                <th>IP Address</th>
+                                <th>Username</th>
+                                <th>User ID</th>
+                                <th>Device</th>
+                                <th>Platform</th>
+                                <th>Request</th>
                                 <th>Message</th>
                             </tr>
                         </thead>
@@ -386,6 +419,12 @@ async function loadLogs() {
                                     <td>${escapeHTML(categoryNames[log.type] || log.type)}</td>
                                     <td><span class="level level-${escapeHTML(log.level)}">${escapeHTML(log.level)}</span></td>
                                     <td>${escapeHTML(log.source)}</td>
+                                    <td>${escapeHTML(log.metadata?.ip || log.metadata?.realIp || "—")}</td>
+                                    <td>${escapeHTML(log.metadata?.username || "—")}</td>
+                                    <td>${escapeHTML(log.metadata?.userId || "—")}</td>
+                                    <td>${escapeHTML(log.metadata?.device || "—")}</td>
+                                    <td>${escapeHTML(log.metadata?.platform || "—")}</td>
+                                    <td>${escapeHTML([log.metadata?.method, log.metadata?.endpoint || log.metadata?.path, log.metadata?.statusCode].filter(Boolean).join(" ") || "—")}</td>
                                     <td class="message-cell" title="${escapeHTML(log.message)}">${escapeHTML(log.message)}</td>
                                 </tr>
                             `).join("")}
@@ -618,3 +657,6 @@ export async function startDashboard(app) {
         showSectionError("dashboard-content", error.message);
     }
 }
+
+
+

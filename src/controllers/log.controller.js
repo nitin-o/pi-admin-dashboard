@@ -1,10 +1,9 @@
 ﻿import { queryLogs } from "../services/log-query.service.js";
 import {
     getLogTypes,
-    getLogLevels
+    getLogLevels,
+    writeLog
 } from "../services/log.service.js";
-
-import { writeLog } from "../services/log.service.js";
 
 export async function getLogs(req, res) {
     try {
@@ -15,6 +14,14 @@ export async function getLogs(req, res) {
             source: req.query.source,
             from: req.query.from,
             to: req.query.to,
+            ip: req.query.ip,
+            username: req.query.username,
+            userId: req.query.userId,
+            device: req.query.device,
+            platform: req.query.platform,
+            method: req.query.method,
+            endpoint: req.query.endpoint,
+            statusCode: req.query.statusCode,
             page: req.query.page,
             limit: req.query.limit
         });
@@ -30,7 +37,10 @@ export async function getLogs(req, res) {
                 level: "error",
                 source: "logs-controller",
                 message: "Failed to retrieve logs",
-                metadata: { error: error.message }
+                requestId: req.requestId || null,
+                metadata: {
+                    error: error.message
+                }
             });
         } catch {
             // Preserve the original API error.

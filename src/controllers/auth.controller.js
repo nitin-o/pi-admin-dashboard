@@ -2,6 +2,34 @@
 import jwt from "jsonwebtoken";
 import { writeLog } from "../services/log.service.js";
 
+function getClientDetails(req) {
+    const userAgent = req.get("user-agent") || "unknown";
+
+    let platform = "unknown";
+    let device = "unknown";
+
+    if (/android/i.test(userAgent)) platform = "Android";
+    else if (/iphone|ipad|ipod/i.test(userAgent)) platform = "iOS";
+    else if (/windows/i.test(userAgent)) platform = "Windows";
+    else if (/macintosh|mac os/i.test(userAgent)) platform = "macOS";
+    else if (/linux/i.test(userAgent)) platform = "Linux";
+
+    if (/ipad|tablet/i.test(userAgent)) device = "tablet";
+    else if (/mobile|android|iphone/i.test(userAgent)) device = "mobile";
+    else if (userAgent !== "unknown") device = "desktop";
+
+    return {
+        ip: req.ip || "unknown",
+        realIp: req.ip || "unknown",
+        userAgent,
+        device,
+        platform,
+        method: req.method,
+        endpoint: `${req.baseUrl}${req.path}`,
+        requestId: req.requestId || null
+    };
+}
+
 export async function login(req, res, next) {
     try {
         const { username, password } = req.body || {};
@@ -19,15 +47,13 @@ export async function login(req, res, next) {
             });
         }
 
-        const validUsername =
-            username === process.env.ADMIN_USERNAME;
+        const validUsername = username === process.env.ADMIN_USERNAME;
 
         const validPassword = process.env.ADMIN_PASSWORD_HASH
-            ? await bcrypt.compare(
-                password,
-                process.env.ADMIN_PASSWORD_HASH
-            )
+            ? await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH)
             : false;
+
+        const client = getClientDetails(req);
 
         if (!validUsername || !validPassword) {
             await writeLog({
@@ -35,9 +61,14 @@ export async function login(req, res, next) {
                 level: "warning",
                 source: "auth-controller",
                 message: "Admin login failed",
+                requestId: req.requestId || null,
                 metadata: {
                     username: username.slice(0, 100),
-                    ip: req.ip
+                    userId: null,
+                    userRole: "anonymous",
+                    event: "login_failed",
+                    statusCode: 401,
+                    ...client
                 }
             });
 
@@ -65,9 +96,14 @@ export async function login(req, res, next) {
             level: "info",
             source: "auth-controller",
             message: "Admin login successful",
+            requestId: req.requestId || null,
             metadata: {
+                userId: "admin",
                 username,
-                ip: req.ip
+                userRole: "admin",
+                event: "login_success",
+                statusCode: 200,
+                ...client
             }
         });
 
@@ -76,6 +112,7 @@ export async function login(req, res, next) {
             message: "Login successful",
             token,
             user: {
+                id: "admin",
                 username,
                 role: "admin"
             }
@@ -87,13 +124,21 @@ export async function login(req, res, next) {
 
 export async function logout(req, res, next) {
     try {
+        const client = getClientDetails(req);
+
         await writeLog({
             type: "authentication",
             level: "info",
             source: "auth-controller",
             message: "Admin logout requested",
+            requestId: req.requestId || null,
             metadata: {
-                username: req.user?.username || "unknown"
+                userId: req.user?.id || null,
+                username: req.user?.username || "unknown",
+                userRole: req.user?.role || "unknown",
+                event: "logout",
+                statusCode: 200,
+                ...client
             }
         });
 
@@ -112,3 +157,4 @@ export function currentUser(req, res) {
         user: req.user
     });
 }
+

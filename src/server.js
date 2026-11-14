@@ -21,6 +21,7 @@ import {
 } from "./middleware/error-handler.js";
 
 import { attachWebSocket } from "./services/websocket.service.js";
+import { log } from "node:console";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +31,7 @@ const app = express();
 const server = createServer(app);
 
 app.disable("x-powered-by");
+app.set("trust proxy", "loopback");
 
 app.use(helmet());
 
@@ -67,6 +69,7 @@ app.get("/api/health", (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/logs", logRoutes);

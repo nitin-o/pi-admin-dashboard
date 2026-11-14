@@ -18,6 +18,16 @@ const TYPES = [
 
 const LEVELS = ["debug", "info", "warning", "error"];
 
+function matches(value, filter) {
+    if (filter === undefined || filter === null || filter === "") {
+        return true;
+    }
+
+    return String(value ?? "")
+        .toLowerCase()
+        .includes(String(filter).toLowerCase());
+}
+
 export async function queryLogs(filters = {}) {
     const {
         type,
@@ -26,6 +36,14 @@ export async function queryLogs(filters = {}) {
         from,
         to,
         source,
+        ip,
+        username,
+        userId,
+        device,
+        platform,
+        method,
+        endpoint,
+        statusCode,
         page = 1,
         limit = 50
     } = filters;
@@ -42,7 +60,6 @@ export async function queryLogs(filters = {}) {
     }
 
     const entries = [];
-
     let files = [];
 
     try {
@@ -73,25 +90,37 @@ export async function queryLogs(filters = {}) {
 
     const filtered = entries.filter(entry => {
         const timestamp = Date.parse(entry.timestamp);
+        const metadata = entry.metadata || {};
 
         if (!Number.isFinite(timestamp)) return false;
-
         if (type && entry.type !== type) return false;
         if (level && entry.level !== level) return false;
 
-        if (from && timestamp < Date.parse(from)) return false;
-        if (to && timestamp > Date.parse(to)) return false;
+        if (from) {
+            const fromTime = Date.parse(from);
+            if (Number.isFinite(fromTime) && timestamp < fromTime) return false;
+        }
+
+        if (to) {
+            const toTime = Date.parse(to);
+            if (Number.isFinite(toTime) && timestamp > toTime) return false;
+        }
+
+        if (!matches(entry.source, source)) return false;
+        if (!matches(metadata.ip, ip) && !matches(metadata.realIp, ip)) return false;
+        if (!matches(metadata.username, username)) return false;
+        if (!matches(metadata.userId, userId)) return false;
+        if (!matches(metadata.device, device)) return false;
+        if (!matches(metadata.platform, platform)) return false;
+        if (!matches(metadata.method, method)) return false;
+        if (!matches(metadata.endpoint || metadata.path, endpoint)) return false;
+        if (!matches(metadata.statusCode, statusCode)) return false;
 
         if (
             search &&
-            !`${entry.message} ${entry.source} ${entry.type}`
+            !`${entry.message} ${entry.source} ${entry.type} ${JSON.stringify(metadata)}`
                 .toLowerCase()
                 .includes(String(search).toLowerCase())
-        ) return false;
-
-        if (
-            source &&
-            !entry.source.toLowerCase().includes(String(source).toLowerCase())
         ) return false;
 
         return true;
